@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Row 1: All Completed Near-White #F5F5F7 Dots -->
+    <path
+        android:fillColor="#F5F5F7"
+        android:pathData="M36,36 m -5.5,0 a 5.5,5.5 0 1,0 11,0 a 5.5,5.5 0 1,0 -11,0" />
+    <path
+        android:fillColor="#F5F5F7"
+        android:pathData="M54,36 m -5.5,0 a 5.5,5.5 0 1,0 11,0 a 5.5,5.5 0 1,0 -11,0" />
+    <path
+        android:fillColor="#F5F5F7"
+        android:pathData="M72,36 m -5.5,0 a 5.5,5.5 0 1,0 11,0 a 5.5,5.5 0 1,0 -11,0" />
+
+    <!-- Row 2: All Completed Near-White #F5F5F7 Dots -->
+    <path
+        android:fillColor="#F5F5F7"
+        android:pathData="M36,54 m -5.5,0 a 5.5,5.5 0 1,0 11,0 a 5.5,5.5 0 1,0 -11,0" />
+    <path
+        android:fillColor="#F5F5F7"
+        android:pathData="M54,54 m -5.5,0 a 5.5,5.5 0 1,0 11,0 a 5.5,5.5 0 1,0 -11,0" />
+    <path
+        android:fillColor="#F5F5F7"
+        android:pathData="M72,54 m -5.5,0 a 5.5,5.5 0 1,0 11,0 a 5.5,5.5 0 1,0 -11,0" />
+
+    <!-- Row 3: All Completed Near-White #F5F5F7 Dots -->
+    <path
+        android:fillColor="#F5F5F7"
+        android:pathData="M36,72 m -5.5,0 a 5.5,5.5 0 1,0 11,0 a 5.5,5.5 0 1,0 -11,0" />
+    <path
+        android:fillColor="#F5F5F7"
+        android:pathData="M54,72 m -5.5,0 a 5.5,5.5 0 1,0 11,0 a 5.5,5.5 0 1,0 -11,0" />
+    <path
+        android:fillColor="#F5F5F7"
+        android:pathData="M72,72 m -5.5,0 a 5.5,5.5 0 1,0 11,0 a 5.5,5.5 0 1,0 -11,0" />
+</vector>

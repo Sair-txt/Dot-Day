@@ -1,0 +1,808 @@
+# DOT DAY — MASTER PRODUCTION READINESS, FUNCTIONALITY AUDIT, BUG FIXING AND VERIFICATION PROMPT
+
+## YOUR ROLE
+
+Act as a senior Android engineer, software reliability engineer, QA automation engineer, and mobile application architect.
+
+You are working on my EXISTING native Android application, **Dot Day**.
+
+Your primary responsibility is to make the actual application operational, dependable, internally consistent, and thoroughly tested.
+
+The app already contains its own architecture, UI, Room database, custom events, Jetpack Compose screens, Jetpack Glance home-screen widget, preferences, accent customization, date calculations, navigation, and widget appearance settings.
+
+Treat the supplied project as the source of truth.
+
+**Do not rebuild the app from scratch. Do not replace existing functionality with mockups. Do not convert it into a website. Do not remove features to make testing easier.**
+
+I care more about a reliable application than an impressive-looking but incomplete application.
+
+My goal is to have an app in which every existing button, setting, screen, action, preference, database operation, and widget interaction does what it is supposed to do.
+
+One particularly important existing problem is that the **Refresh Widget** button does not work correctly for me. Investigate its entire execution path, establish the actual root cause, fix it, and verify the fix.
+
+Do not assume the Refresh Widget button is the only defect. Audit the entire application systematically.
+
+## NON-NEGOTIABLE PRIORITIES
+
+Follow this priority order:
+
+1. Preserve all existing user data and functionality.
+2. Find and fix actual bugs and broken interactions.
+3. Ensure settings, database state, UI state, and widget state remain synchronized.
+4. Make every existing button and feature functional.
+5. Verify date calculations, persistence, navigation, and widget behavior.
+6. Make the application stable across relevant Android versions and widget launchers.
+7. Preserve the established premium design and animations.
+8. Add visual improvements only when they do not compromise correctness.
+
+Do not introduce new features merely to make the project seem more complete. Finish the existing features first.
+
+Do not declare the work complete simply because the application compiles or a preview looks correct.
+
+---
+
+# PHASE 1 — THOROUGH PROJECT RECONNAISSANCE
+
+Before editing code, inventory the complete project.
+
+Inspect every relevant source file, including:
+
+- All Kotlin source files.
+- Every Jetpack Compose screen.
+- All composables containing interactive controls.
+- Navigation routes and navigation state.
+- ViewModels and state holders.
+- Repositories and data sources.
+- Room entities, DAOs, migrations, and database initialization.
+- SharedPreferences or DataStore implementation.
+- Custom event creation, editing, deletion, pinning, and filtering.
+- All date and countdown calculations.
+- Jetpack Glance widget classes and widget receivers.
+- Every AppWidget update entry point.
+- Widget metadata, XML resources, and AndroidManifest.xml.
+- Widget appearance and accent-colour settings.
+- Background opacity settings and persistence.
+- Theme, typography, and bundled font resources.
+- Gradle configuration and dependencies.
+- Unit tests, instrumented tests, and existing test fixtures.
+- Logging, error handling, and any existing crash-handling mechanisms.
+
+Map the app's architecture and follow important actions from the user interface all the way through their underlying implementation.
+
+Create an internal inventory of:
+
+- Every screen.
+- Every navigation destination.
+- Every visible button.
+- Every icon button.
+- Every clickable card or row.
+- Every menu and dropdown action.
+- Every toggle, checkbox, radio button, slider, text field, and segmented control.
+- Every confirmation and cancellation action.
+- Every save, update, refresh, reset, delete, pin, and filter operation.
+- Every widget-related action.
+
+Include controls that are conditionally displayed and controls that appear inside dialogs or settings sub-sections.
+
+For each interactive element, identify its expected behavior and the actual function, callback, repository, preference key, database operation, or Android API it invokes.
+
+Create an audit checklist and track the actual implementation and verification status of every item.
+
+Do not start with a redesign. First understand how the existing application works.
+
+# PHASE 2 — FIX THE REFRESH WIDGET BUTTON
+
+This is a critical requirement.
+
+The Refresh Widget button is currently not working as expected. Do not replace it with a fake refresh animation or merely display a success message.
+
+Trace the real execution path from the button to the widget update.
+
+## A. Investigate the UI callback
+
+Inspect the composable containing the Refresh Widget button.
+
+Verify:
+
+- The button has a real, correctly connected onClick callback.
+- The callback is reachable and is not accidentally disabled.
+- The callback does not simply return without performing work.
+- It invokes the intended ViewModel, repository, or widget manager operation.
+- Exceptions are not swallowed silently.
+- A coroutine, if needed, uses an appropriate lifecycle-aware scope.
+- The button cannot launch an uncontrolled number of concurrent updates.
+- The UI accurately represents success, failure, or an operation in progress.
+
+Check whether the existing implementation uses a suspend function from a non-suspending callback, blocks the main thread, launches a coroutine that is immediately cancelled, or creates a scope with an inappropriate lifetime.
+
+Do not guess. Find the actual defect in the supplied source.
+
+## B. Inspect the Glance widget update implementation
+
+Inspect the actual Jetpack Glance widget classes, receivers, and update APIs.
+
+Determine whether the application uses:
+
+- GlanceAppWidget.update(context, glanceId).
+- GlanceAppWidget.updateAll(context).
+- GlanceAppWidgetManager.getGlanceIds(...).
+- The appropriate widget receiver.
+- Glance state or preferences.
+- Additional application-owned widget state.
+- Any custom helper used by the Refresh Widget button.
+
+Check that the code uses APIs compatible with the exact Glance dependency version in the project.
+
+Verify that the refresh operation reaches the correct widget class and all existing widget instances, not an unrelated class or a single cached instance.
+
+Do not introduce redundant refresh mechanisms when the existing architecture already provides an appropriate one.
+
+## C. Verify receiver and manifest configuration
+
+Inspect AndroidManifest.xml and all relevant widget metadata.
+
+Verify that:
+
+- The widget receiver is declared correctly.
+- Its intent filters and metadata are valid.
+- The provider XML references the correct resources.
+- The receiver points to the correct widget implementation.
+- The correct widget class is being refreshed.
+- The app can discover and update the widget instances.
+- Configuration activities, if present, are correctly declared.
+- No stale package names, class names, resource IDs, or copied receiver declarations remain.
+
+Check the actual manifest and runtime configuration rather than assuming registration is correct.
+
+## D. Ensure refresh recomputes current state
+
+A refresh should not merely redraw old values.
+
+Verify the refresh path for each piece of displayed state:
+
+- Current year.
+- Actual remaining-day count.
+- Current-day indicator.
+- Completed and future day dots.
+- Custom accent colour.
+- Selected widget background mode.
+- Background opacity.
+- Existing date-completion preferences.
+- Any other widget configuration stored by the app.
+
+Refresh should read the current local date and the latest saved preferences and recalculate whatever depends on them.
+
+Check that the displayed countdown is not frozen in a cached object or updated only when the application screen is reopened.
+
+Ensure appropriate date changes, saved settings, and relevant state changes update the widget through the existing supported update mechanisms.
+
+If time-based changes require scheduled updates, inspect what is already implemented and use Android-supported scheduling approaches where appropriate. Do not add an unrestricted background service or waste battery with aggressive polling.
+
+## E. Investigate widget state and caching
+
+Check whether stale values come from:
+
+- An obsolete in-memory state object.
+- Incorrect preference keys.
+- A widget-specific state store that is not synchronized with application preferences.
+- A wrong widget ID.
+- Missing or incomplete update calls.
+- A state object that is not invalidated.
+- A Glance composition that does not observe the intended state.
+- A receiver that targets an obsolete class.
+- A refresh callback that does not invoke the underlying widget update mechanism.
+- A date calculation that is not rerun.
+- Failed update execution or lifecycle cancellation.
+
+Use the source code and test results to identify the cause.
+
+If multiple causes exist, fix all of them.
+
+## F. Give the refresh button useful behavior
+
+After a successful operation:
+
+- The real existing widget instances must receive the appropriate update request.
+- Changed settings and current countdown data must be reflected.
+- The UI should provide appropriate feedback.
+- The button should not claim success before the operation has genuinely succeeded.
+- Repeated tapping should not result in uncontrolled duplicate work.
+
+If an error occurs, provide a clear, appropriate error state and diagnostic information. Do not pretend the refresh succeeded.
+
+If the widget cannot be found or Android prevents an update, report that condition honestly and explain any appropriate recovery action.
+
+## G. Test the refresh operation
+
+Write appropriate tests for the refresh coordinator or widget-update abstraction wherever possible.
+
+Verify that it invokes the expected widget implementation and uses the latest saved settings and date.
+
+Mock Android-dependent components only for unit tests; do not mistake mocked verification for a real widget integration test.
+
+Where Android test tooling is available, verify a real installed widget and observe whether a refresh changes its content.
+
+**Acceptance requirement:** Do not mark Refresh Widget as fixed until the original failure has been traced to a cause, the code has been corrected, and the fix has been verified at the strongest level supported by the environment.
+
+---
+
+# PHASE 3 — AUDIT EVERY BUTTON AND INTERACTIVE ELEMENT
+
+Treat every visible control as a potential bug until its behavior has been traced and verified.
+
+Inspect every screen, dialog, settings category, dropdown, and contextual action.
+
+For every interactive element, establish:
+
+1. What action the control promises to perform.
+2. Which callback handles its interaction.
+3. Whether the callback is actually connected and reachable.
+4. Whether it changes the correct state or performs the correct operation.
+5. Whether the operation is persisted when required.
+6. Whether other affected screens and widgets receive the update.
+7. Whether errors and cancellation are handled correctly.
+8. Whether repeated taps or rapid interactions cause duplication, stale state, or crashes.
+9. Whether the result remains correct after navigating away and returning.
+10. Whether the behavior has a meaningful test or a clearly documented verification limitation.
+
+Audit, at minimum, the following.
+
+## Navigation
+
+- Every bottom navigation item.
+- Every tab and segmented control.
+- Every back button.
+- Every toolbar action.
+- Every menu item.
+- Every navigation destination.
+- Every nested settings destination.
+- Navigation from event cards into event details.
+- Returning from editors or dialogs.
+- System Back behavior.
+- Restoring the correct screen after configuration changes, where intended.
+
+No control may navigate to the wrong destination or appear interactive without having a defined action.
+
+## Main year screen
+
+- Grid and month views.
+- Year navigation, where present.
+- Day selection.
+- Current-day indicator.
+- Progress indicators.
+- Header actions.
+- Date details.
+- Any calendar or display controls.
+- Any refresh or recalculation control.
+- Widget refresh action, if available here.
+
+Check day ordering, date mapping, and transitions between the grid and month representations.
+
+## Custom events
+
+- Add event.
+- Edit event.
+- Save event.
+- Cancel editing.
+- Delete event.
+- Confirm deletion.
+- Pin or unpin.
+- Change event icon or emoji.
+- Change title, target date, and other supported fields.
+- Apply filters.
+- Clear filters.
+- Change sorting, if available.
+- Open event details.
+- Return from event details.
+- Any archive or completion state that already exists.
+
+Verify actual persistence through Room or the existing storage mechanism. Never report a successful save if the write failed.
+
+Do not change event records or delete data simply to make tests pass.
+
+## Settings
+
+- Change accent presets.
+- Open the custom colour picker.
+- Select hue and saturation.
+- Change colour lightness.
+- Read the HEX value.
+- Apply the selected accent.
+- Reset to the default accent.
+- Select Solid background.
+- Select Transparent background.
+- Select Translucent background.
+- Adjust opacity.
+- Refresh the actual widget after appearance changes.
+- Change date-completion behavior.
+- Change any other existing setting.
+- Reset any existing configuration, where supported.
+
+All saved preferences must survive normal app restarts.
+
+Test cancellation and unsaved states where relevant. Exiting a dialog without applying must not accidentally persist an uncommitted value.
+
+## Dialogs and text inputs
+
+- Close and dismiss actions.
+- Cancel buttons.
+- Confirm buttons.
+- Validation messages.
+- Save buttons.
+- Reset buttons.
+- Keyboard behavior.
+- Empty or invalid input.
+- Repeated submission.
+- Back-button dismissal.
+- Any actions available from context menus.
+
+Do not allow a dialog to close before a required save or deletion finishes if doing so would create misleading behavior.
+
+## Widget-related controls
+
+- Refresh widget.
+- Change widget background.
+- Change widget opacity.
+- Change accent colour.
+- Any widget configuration activity.
+- Any widget preview action.
+- Any other visible widget-related controls.
+
+Make sure widget controls affect the real widget, not only an in-app sample.
+
+## Important rule
+
+Do not solve this audit by deleting, disabling, hiding, or relabeling controls whose implementation is difficult.
+
+Repair the actual implementation while preserving existing product behavior.
+
+If a legacy feature genuinely cannot be made operational, document the root cause and the remaining work explicitly rather than pretending it is complete.
+
+---
+
+# PHASE 4 — DATA SAFETY AND DATABASE CORRECTNESS
+
+Treat user-created data as important.
+
+Inspect all database operations, persistence paths, and migrations.
+
+Verify:
+
+- Room database initialization.
+- Entity definitions.
+- DAO insert, update, query, and delete operations.
+- Repository error handling.
+- Correct handling of database results.
+- Stable identifiers for existing records.
+- Correct event updates rather than accidental duplicate inserts.
+- Correct deletion of the intended record.
+- Event ordering and filtering.
+- Database transaction boundaries where appropriate.
+- Migration behavior for any schema changes.
+- Data retention when preferences or appearance settings are reset.
+
+Never drop or recreate the user's production database as a shortcut.
+
+Never remove existing records to get a test to pass.
+
+If a database schema change is necessary, implement a valid migration or another appropriately safe upgrade path.
+
+Do not change the database version without accounting for the resulting migration behavior.
+
+Test inserts, updates, deletes, reopening the database, and querying records after operations.
+
+Check that a failed operation leaves the app in a consistent state and provides appropriate feedback.
+
+---
+
+# PHASE 5 — STATE SYNCHRONIZATION AND PERSISTENCE
+
+The main app, settings screens, theme, custom colour picker, and home-screen widget must share consistent values.
+
+Audit every preference and identify its authoritative storage location.
+
+Verify synchronization between:
+
+- SharedPreferences or DataStore.
+- ViewModels and Compose state.
+- Material theme.
+- Year-grid visualization.
+- Event lists and filters.
+- Widget background mode.
+- Widget background opacity.
+- Custom accent colour.
+- The actual Jetpack Glance widget.
+
+Eliminate duplicate preference keys, inconsistent types, and accidental default-value resets.
+
+Ensure updates are observed correctly, saved values are reloaded correctly, and the correct widgets are refreshed after changes.
+
+Check behavior after:
+
+- Closing and reopening the app.
+- Navigating between screens.
+- Recreating an activity.
+- Process recreation where supported by the test environment.
+- Device restart, where an appropriate integration test can be performed.
+- Repeated changes to the same setting.
+- Cancelling an uncommitted edit.
+
+If a value is expected to persist, it must not exist only in temporary Compose state.
+
+---
+
+# PHASE 6 — DATE AND COUNTDOWN CORRECTNESS
+
+Carefully inspect all date and countdown calculations.
+
+Verify:
+
+- Remaining days until an event.
+- Days elapsed in the current year.
+- Days remaining in the current year.
+- Current-day completion logic.
+- Inclusive versus exclusive counting.
+- Leap years.
+- February 28 and February 29.
+- December 31.
+- January 1.
+- Transitions across year boundaries.
+- Events that occur today.
+- Events in the past.
+- Future events.
+- Local time-zone and calendar-date handling.
+- Daylight-saving changes where relevant to supported locales.
+- Null, missing, or invalid dates.
+
+Never use a hardcoded countdown value.
+
+Ensure the app and widget agree on the same date semantics.
+
+Use deterministic clock injection or another testable date abstraction where appropriate, while preserving correct local-date behavior in production.
+
+Add unit tests for boundary conditions and correct any off-by-one errors.
+
+---
+
+# PHASE 7 — CUSTOM ACCENT COLOUR AND APPEARANCE CORRECTNESS
+
+Preserve the existing custom colour wheel and lightness slider if present.
+
+Verify:
+
+- Touch input works on the wheel.
+- Hue and saturation calculations are correct.
+- Lightness changes the shade as intended.
+- HEX values match the actual colour.
+- The preview updates correctly.
+- Applying a colour saves the right value.
+- Reset restores the correct default.
+- Foreground colours remain appropriate.
+- Existing preset colours remain available.
+- Colours persist across restarts.
+- The Compose theme uses the saved colour.
+- The main year grid uses the correct current-day accent.
+- The real widget uses the same custom accent where supported.
+- Saved accent changes request a widget update.
+
+Completed and future dots should remain neutral unless an existing intentional feature specifies otherwise.
+
+Audit background modes:
+
+**Solid:** charcoal surface using #202126.
+
+**Transparent:** no app-drawn solid background that prevents the host wallpaper from showing through where supported.
+
+**Translucent:** adjustable tint opacity from 0 to 100, with the real saved value reflected in the widget.
+
+Do not claim actual live wallpaper blur unless the implementation truly supports it.
+
+Make all settings resilient to process recreation and default-value handling.
+
+---
+
+# PHASE 8 — WIDGET LAYOUT AND OPERATION
+
+The widget must function independently of the app's in-app preview.
+
+Verify:
+
+- Correct receiver registration.
+- Correct AppWidget metadata.
+- Correct widget implementation class.
+- Correct widget update calls.
+- Correct current date.
+- Correct remaining-day calculation.
+- Correct dot count.
+- Leap-year behavior.
+- The requested 4 × 2 launcher-cell target.
+- Responsive resizing.
+- Correct custom accent.
+- Correct solid, transparent, and translucent modes.
+- Correct opacity.
+- Readable text and dots.
+- No stale saved values.
+- No accidental solid background in transparent mode.
+- No percentage or unwanted footer branding.
+- Correct refresh behavior for existing instances.
+
+Fix the compressed grid layout without distorting circles or hardcoding a single device width.
+
+Preserve the minimal, quiet visual style.
+
+Inspect actual Glance APIs and Android widget-host constraints. Do not use unsupported Compose-only APIs within Glance or claim that a preview guarantees real launcher behavior.
+
+Explain any platform limitation honestly.
+
+---
+
+# PHASE 9 — PREMIUM VISUAL DESIGN WITHOUT REGRESSIONS
+
+Preserve the refined premium UI and improve it only when useful.
+
+Keep the app calm, precise, minimal, and typography-led.
+
+Maintain:
+
+- Refined spacing.
+- Clear typography.
+- Consistent surfaces.
+- Restrained accent colour.
+- Appropriate Material 3 behavior.
+- Purposeful motion.
+- Comfortable touch targets.
+- Accessible contrast.
+- Readability under system font scaling.
+
+Keep transitions responsive and avoid unnecessary animation.
+
+Respect Android's animation settings and reduced-motion preferences where practical.
+
+Ensure animations do not prevent actions, lose state, break navigation, or interrupt form submission.
+
+Use the local Roboto Flex font in the main app where genuinely supported. Verify widget font support rather than making assumptions.
+
+**Never sacrifice functioning code, persistence, or navigation to preserve an animation or visual detail.**
+
+---
+
+# PHASE 10 — ERROR HANDLING AND DIAGNOSTICS
+
+Inspect exception handling across the application.
+
+Identify:
+
+- Silent failures.
+- Empty catch blocks.
+- Incorrect coroutine scopes.
+- Unhandled exceptions.
+- Main-thread blocking.
+- Race conditions.
+- Duplicate submissions.
+- Invalid navigation state.
+- Stale observable state.
+- Invalid resource references.
+- Incorrect lifecycle handling.
+- Database exceptions.
+- Widget update failures.
+- Preference parsing failures.
+- Misleading success messages.
+
+Fix underlying problems rather than masking them.
+
+Provide useful error messages when appropriate, while avoiding exposure of private information.
+
+Add targeted diagnostic logging where useful, particularly around widget updates and persistence failures.
+
+Do not log sensitive user event details unnecessarily.
+
+Do not add continuous logging or verbose production logging that harms performance.
+
+---
+
+# PHASE 11 — AUTOMATED TESTING
+
+Use the project's existing test framework where possible.
+
+Do not delete existing tests simply because they fail.
+
+Add useful tests for newly discovered defects and important existing behavior.
+
+At minimum, cover the following where technically applicable.
+
+## Unit tests
+
+- Countdown calculations.
+- Leap-year behavior.
+- Date boundaries.
+- Inclusive and exclusive date-completion settings.
+- Colour-wheel conversions.
+- Lightness calculations.
+- Preference defaults.
+- Preference persistence.
+- Event repository behavior.
+- Filtering and sorting.
+- Data validation.
+- Error cases.
+
+## Database tests
+
+- Insert a custom event.
+- Read the saved event.
+- Update the event.
+- Delete the event.
+- Verify the intended record was affected.
+- Verify records remain after reopening the database.
+- Verify any required migration path.
+
+## Compose/UI tests
+
+Test important user interactions, including:
+
+- Navigating between main screens.
+- Opening and dismissing dialogs.
+- Creating and editing events.
+- Applying filters.
+- Saving settings.
+- Applying and resetting accent colours.
+- Changing widget appearance.
+- Triggering Refresh Widget.
+- Confirming or cancelling destructive actions.
+
+Use stable test identifiers or semantics where needed, without weakening accessibility.
+
+## Widget tests
+
+Where the environment supports it, verify:
+
+- Correct widget class and registration.
+- The refresh callback reaches the correct update mechanism.
+- All applicable widget instances are targeted.
+- Saved preferences are read correctly.
+- The correct date and dot count are displayed.
+- Accent and background changes propagate to the widget.
+- Resizing does not break the dot grid.
+
+Separate unit tests, mocks, and actual launcher integration tests in the final report. Do not present mocked tests as proof that a real widget works.
+
+---
+
+# PHASE 12 — BUILD AND TEST THE ACTUAL ANDROID PROJECT
+
+Inspect the real build environment and project configuration.
+
+Check:
+
+- Gradle wrapper availability and contents.
+- Gradle compatibility.
+- Android Gradle Plugin compatibility.
+- Kotlin compiler and plugin versions.
+- Java toolchain.
+- Android SDK availability.
+- Dependency repositories.
+- Resource compilation.
+- Manifest merging.
+- Kotlin compilation.
+- Compose and Glance compatibility.
+- Unit-test configuration.
+- Debug APK packaging.
+
+Use the project's existing wrapper if it is present and valid.
+
+If necessary tools are missing, identify what is missing and whether installation or download is possible.
+
+Do not invent build success, replace working build configuration blindly, or use arbitrary dependency upgrades to silence compilation errors.
+
+Run the real debug build, unit tests, and other appropriate checks.
+
+After fixing failures, repeat the relevant commands.
+
+If physical-device access or emulator support is available, test the app on a real runtime. If it is not available, state that explicitly.
+
+Do not claim visual correctness based solely on source inspection.
+
+Do not declare the app fully verified if the actual build cannot run.
+
+---
+
+# PHASE 13 — END-TO-END ACCEPTANCE CHECKLIST
+
+Before completion, verify every item below to the strongest level the available environment supports.
+
+### Application integrity
+
+- The original application ID is preserved.
+- Existing app architecture remains intact.
+- Existing Room data and records are preserved.
+- No important screen has been removed.
+- No existing feature has been silently disabled.
+
+### Functional integrity
+
+- Every visible button has a defined, implemented action.
+- Every interactive icon has a defined, implemented action.
+- Every navigation item reaches the correct destination.
+- Every save action persists the intended state.
+- Every cancel action behaves correctly.
+- Every destructive action affects the correct record.
+- Every filter uses the correct criteria.
+- No placeholder or no-op button is presented as functional.
+- Error states do not falsely report success.
+
+### Widget reliability
+
+- Refresh Widget has a verified implementation and test result.
+- The correct widget class and existing widget instances are updated.
+- Current date and preferences are refreshed.
+- The requested 4 × 2 target is preserved.
+- The dot grid uses the available width correctly.
+- All 365 or 366 dates are represented.
+- The current-day marker uses the selected accent.
+- Background appearance settings are synchronized.
+- Existing widgets reflect saved changes.
+
+### Data safety
+
+- Custom events survive normal app restarts.
+- Edits update the intended records.
+- Deletes affect only the intended records.
+- Database initialization and migrations are valid.
+- Settings persist.
+- Cancelled operations do not accidentally save changes.
+
+### Visual integrity
+
+- Layouts adapt to supported widget sizes.
+- Dialogs and animations do not block interaction.
+- Contrast remains appropriate.
+- The app remains responsive.
+- Typography and colours remain consistent.
+
+### Testing integrity
+
+- Existing tests have been preserved.
+- New tests cover important regressions.
+- Actual build and test commands have been run where possible.
+- Failures have been addressed or documented.
+- Unverified behavior is explicitly identified.
+
+If a checklist item cannot be verified, leave it marked as unverified. Do not tick it merely because implementation code appears plausible.
+
+---
+
+# PHASE 14 — COMPLETION REPORT
+
+At the end, provide a concise but evidence-based report.
+
+Include:
+
+1. **Project audit:** the major problems discovered.
+2. **Root causes:** the actual causes of the Refresh Widget failure and any other significant bugs.
+3. **Fixes:** what was changed and why.
+4. **Files modified:** the exact paths and purpose of each significant change.
+5. **Button audit:** total controls inventoried, fully verified, partially verified, and still unverified. Define the counting method and do not invent counts.
+6. **Data integrity:** what database and persistence checks passed.
+7. **Widget verification:** the level of actual refresh and launcher testing performed.
+8. **Build results:** actual commands executed and pass/fail results.
+9. **Test results:** real test totals, failed tests, and blocked tests.
+10. **Known limitations:** anything that still does not work or could not be verified.
+11. **APK:** provide the output path and downloadable APK only if one was successfully built.
+12. **Updated source:** provide the complete updated project ZIP where supported.
+
+Do not omit failures from the report.
+
+Do not describe unimplemented or untested functionality as complete.
+
+Do not delete, hide, or disable a feature to make the checklist look better.
+
+## FINAL DIRECTIVE
+
+The goal is not to make Dot Day look finished.
+
+The goal is to make Dot Day behave correctly, retain data safely, update its real widget reliably, respond properly to every supported interaction, and continue working after restarts and configuration changes.
+
+**Audit the existing implementation, identify actual root causes, fix them, test the fixes, and provide truthful evidence of the result.**
+
+Correctness comes before cosmetics. Data safety comes before convenience. Verified functionality comes before feature count.
+
+Make the smallest safe changes necessary to deliver the most reliable complete application possible.

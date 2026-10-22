@@ -1,0 +1,6 @@
+{
+  "name": "Dot Day",
+  "description": "Minimalist dot-based countdown app and year progress tracker with Android home-screen widgets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
